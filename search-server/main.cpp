@@ -1,9 +1,3 @@
-// Решите загадку: Сколько чисел от 1 до 1000 содержат как минимум одну цифру 3?
-// Напишите ответ здесь: 271
-
-// Закомитьте изменения и отправьте их в свой репозиторий.
-
-//Я не знаю как оно прошло тесты
 #include <algorithm>
 #include <iostream>
 #include <set>
@@ -71,27 +65,15 @@ public:
         
         if(!words.empty())
         {
-            double size = 1.0 / words.size();
+            double weight = 1.0 / words.size();
             for(const auto & word: words)
             {   
-                documents[word][document_id] += size; // ok, видимо автоматическое добавление в контейнер элементов, если их нет, рулит
-                // // Есть ли смысл от этой конструкции, вместо верхней, но с ней она тест на скорость не проходит
-                // if(!word.empty())
-                // {
-                //     if((documents.count(word) > 0))
-                //     {     
-                //         if(documents.at(word).count(document_id) > 0)
-                //         { documents.at(word).at(document_id) += size; }
-                //         else documents.at(word).insert({document_id, size});
-                //     }
-                //     else documents.insert({word, {{document_id, size}}});     
-                // }
+                documents[word][document_id] += weight; // ok, видимо автоматическое добавление в контейнер элементов, если их нет, рулит
             }
         }
     }
 
     vector<Document> FindTopDocuments(const string& raw_query) const {
-        //if(raw_query.empty()) return {};
         const Query query = ParseQuery(raw_query);
 
         auto matched_documents = FindAllDocuments(query);
@@ -138,12 +120,16 @@ private:
         Query query;
         if(!text.empty())
         {
-            // Зачем нам считать слово на стоп плюс и минус в отдельной функции
-            // Если можно разделять слова на плюс и минус без стоп слов
             for (const string& word : SplitIntoWordsNoStop(text))
             {
-                if (word[0] == '-') query.minus_words.insert(word.substr(1));
-                else query.plus_words.insert(word);
+                if (word[0] == '-')
+                {
+                    query.minus_words.insert(word.substr(1));
+                }
+                else 
+                { 
+                    query.plus_words.insert(word);
+                }
             }
         }
         return query;
@@ -152,46 +138,36 @@ private:
     vector<Document> FindAllDocuments(const Query& query) const 
     {
         vector<Document> matched_documents = {};
-        if(!documents.empty() || (!query.plus_words.empty())) {
-
-        map<int, double>  answers;             
-        for(const auto & word: query.plus_words)
+        if(!documents.empty() || (!query.plus_words.empty())) 
         {
-            if((!word.empty()) && (!(documents.count(word) == 0)) && (!documents.at(word).empty()))
+            map<int, double>  answers;             
+            for(const auto & word: query.plus_words)
             {
-                double idf_tf = 0;
-                double idf = (log(document_count_ / (double)documents.at(word).size()));
-
-                for(const auto & document : documents.at(word))
-                {   
-                    answers.insert({document.first, idf_tf});
-
-                    if((answers.count(document.first) > 0)){   
-                        answers.at(document.first) += idf * document.second;
+                if((!word.empty()) && (!(documents.count(word) == 0)) && (!documents.at(word).empty()))
+                {
+                    double idf = (log(document_count_ / (double)documents.at(word).size()));
+                    for(const auto & document : documents.at(word))
+                    {   
+                        answers[document.first] += idf * document.second;
                     }
                 }
             }
-        }
 
-        if(!query.minus_words.empty() || !matched_documents.empty())
-        {
-            set<int> documents_erase;
-            for(const auto & qword: query.minus_words)
+            if(!query.minus_words.empty() || !matched_documents.empty())
             {
-                if((!qword.empty()) && !(documents.count(qword) == 0) && !(documents.at(qword).empty()))
+                for(const auto & qword: query.minus_words)
                 {
-                for(const auto & document : documents.at(qword))
-                {
-                    documents_erase.insert(document.first);
-                }
-                }
+                    if((!qword.empty()) && !(documents.count(qword) == 0) && !(documents.at(qword).empty()))
+                    {
+                        for(const auto & document : documents.at(qword))
+                        {
+                            answers.erase(document.first);
+                        }
+                    }
+                }     
             }
-            if(!documents_erase.empty())
-                for(const auto & id : documents_erase) answers.erase(id);        
-        }
-
-            if(!answers.empty())
-                for(const auto & [id, relevance] : answers) matched_documents.push_back({ id, relevance});
+           
+            for(const auto & [id, relevance] : answers) matched_documents.push_back({ id, relevance});
         }
         return matched_documents;
     }
