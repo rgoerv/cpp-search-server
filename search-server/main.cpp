@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <numeric>
 
 using namespace std;
 
@@ -79,25 +80,17 @@ public:
     template<typename KeyMapper>
     vector<Document> FindTopDocuments(const string& raw_query, KeyMapper key_mapper) const {
         const Query query = ParseQuery(raw_query);
-        vector<Document> matched_documents_for_erase = FindAllDocuments(query);
+        vector<Document> matched_documents = FindAllDocuments(query, key_mapper);
 
-        sort(matched_documents_for_erase.begin(), matched_documents_for_erase.end(),
+        sort(matched_documents.begin(), matched_documents.end(),
              [](const Document& lhs, const Document& rhs) {
-                 if (abs(lhs.relevance - rhs.relevance) < 1e-6) {
+                 const double EPSILON = 1e-6;
+                 if (abs(lhs.relevance - rhs.relevance) < EPSILON) {
                      return lhs.rating > rhs.rating;
              } else {
                  return lhs.relevance > rhs.relevance;
              }
         });
-
-        vector<Document> matched_documents;
-        for(const auto & document : matched_documents_for_erase)
-        {
-            if(key_mapper(document.id, documents_.at(document.id).status, document.rating))
-            {
-                matched_documents.push_back(document);
-            }
-        }
 
         if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
             matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
@@ -168,11 +161,8 @@ private:
         if (ratings.empty()) {
             return 0;
         }
-        int rating_sum = 0;
-        for (const int rating : ratings) {
-            rating_sum += rating;
-        }
-        return rating_sum / static_cast<int>(ratings.size());
+        // ratings sum / count_ratings
+        return accumulate(ratings.begin(), ratings.end(), 0) / static_cast<int>(ratings.size()); 
     }
 
     struct QueryWord {
@@ -216,7 +206,8 @@ private:
         return log(GetDocumentCount() * 1.0 / word_to_document_freqs_.at(word).size());
     }
 
-    vector<Document> FindAllDocuments(const Query& query) const {
+    template<typename KeyMapper>
+    vector<Document> FindAllDocuments(const Query& query, KeyMapper key_mapper) const {
         map<int, double> document_to_relevance;
         for (const string& word : query.plus_words) {
             if (word_to_document_freqs_.count(word) == 0) {
@@ -239,8 +230,10 @@ private:
 
         vector<Document> matched_documents;
         for (const auto [document_id, relevance] : document_to_relevance) {
-            matched_documents.push_back(
-                {document_id, relevance, documents_.at(document_id).rating});
+            if(key_mapper(document_id, documents_.at(document_id).status, documents_.at(document_id).rating)) {
+                matched_documents.push_back(
+                    {document_id, relevance, documents_.at(document_id).rating});
+            }
         }
         return matched_documents;
     }
