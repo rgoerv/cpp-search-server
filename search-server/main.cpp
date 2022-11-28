@@ -33,6 +33,7 @@ void TestAddDocument() {
     SearchServer server;
     ASSERT_HINT(!server.GetDocumentCount(), "The server is not empty, but it should be empty.");
     server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
+    ASSERT_HINT(server.GetDocumentCount() == 1, "Document not added || Document count not up.");
 
     vector<Document> find_document = server.FindTopDocuments("cat in the city"s, DocumentStatus::ACTUAL);
 
@@ -41,7 +42,8 @@ void TestAddDocument() {
     ASSERT_EQUAL(find_document[0].rating, accumulate(ratings.begin(), ratings.end(), 0) / static_cast<int>(ratings.size()));
     // it makes no meaning to count the relevance for 1 document here, 
     // ln(1) = 0 [inverse_document_freq = log(GetDocumentCount() * 1.0 / word_to_document_freqs_.at(word).size())]
-    ASSERT_EQUAL(find_document[0].relevance, 0); 
+    const double epsilon = 1e-6;
+    ASSERT(abs(find_document[0].relevance - 0.0) < epsilon);
 }
 
 //Поддержка минус слов, стоп слов и матчинг
@@ -67,7 +69,7 @@ void TestMinusStopWordsSupportAndMatch() {
         SearchServer search_server;
         search_server.SetStopWords("in the with"s);
         search_server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
-        const auto [query_second, document_status_second] = search_server.MatchDocument("cat in the city for sale -sale -lang"s, doc_id);
+        const auto [query_second, document_status_second] = search_server.MatchDocument("cat in the city for sale"s, doc_id);
 
         vector<string> query_true_second = { "cat"s, "city"s};
         ASSERT_EQUAL_HINT(query_second, query_true_second, "Stop word are not erase from the document.");
@@ -77,12 +79,12 @@ void TestMinusStopWordsSupportAndMatch() {
 }
 
 //Сортировка документов по релевантности и вычисление релевантности и рейтинга
-void TestSortAndComputingRelevanceRatingDocuments(){
+void TestSortDocuments(){
 
     SearchServer search_server;
     // Сan be change documents_ and vector ratings - sort, computing relevance, rating will be performed.
     const map<int, string> documents_ = {{0, {"белый кот и модный ошейник"s}}, {1, {"пушистый кот пушистый хвост"s}},
-                                    {2, {"ухоженный пёс выразительные глаза"s}}, {3, {"ухоженный скворец евгений"s}}};
+                                        {2, {"ухоженный пёс выразительные глаза"s}}, {3, {"ухоженный скворец евгений"s}}};
     search_server.AddDocument(0, documents_.at(0), DocumentStatus::ACTUAL, {8, -3});
     search_server.AddDocument(1, documents_.at(1), DocumentStatus::ACTUAL, {7, 2, 7});
     search_server.AddDocument(2, documents_.at(2), DocumentStatus::ACTUAL, {5, -12, 2, 1});
@@ -91,7 +93,7 @@ void TestSortAndComputingRelevanceRatingDocuments(){
     // Relevance computing
     map<string, map<int, double>> word_to_document_freqs_;
 
-    for(const auto & [id, document] : documents_) {
+    for(const auto& [id, document] : documents_) {
         const vector<string> words = SplitIntoWords(document);
         const double inv_word_count = 1.0 / words.size();
         
@@ -116,34 +118,107 @@ void TestSortAndComputingRelevanceRatingDocuments(){
     { return accumulate(ratings.begin(), ratings.end(), 0) / static_cast<int>(ratings.size()); };
 
     // Change arg func ComputeRating
-    vector<Document> answerT = {{0, document_to_relevance.at(0), ComputeRating({8, -3})},
-                                {1, document_to_relevance.at(1), ComputeRating({7, 2, 7})},
+    vector<Document> answer_true = {{1, document_to_relevance.at(1), ComputeRating({7, 2, 7})},
+                                {0, document_to_relevance.at(0), ComputeRating({8, -3})},
                                 {2, document_to_relevance.at(2), ComputeRating({5, -12, 2, 1})}};
 
-    sort(answerT.begin(), answerT.end(),
+    sort(answer_true.begin(), answer_true.end(),
          [](const Document& lhs, const Document& rhs) {
-             const double EPSILON = 1e-6;
-             if (abs(lhs.relevance - rhs.relevance) < EPSILON) {
+             const double epsilon = 1e-6;
+             if (abs(lhs.relevance - rhs.relevance) < epsilon) {
                  return lhs.rating > rhs.rating;
          } else {
              return lhs.relevance > rhs.relevance;
          }
     });
 
-    const vector<Document> anserFind = search_server.FindTopDocuments("пушистый ухоженный кот"s);
+    const vector<Document> anser_find = search_server.FindTopDocuments("пушистый ухоженный кот"s);
     
-    ASSERT_EQUAL(answerT.size(), answerT.size());
+    ASSERT_EQUAL(answer_true.size(), answer_true.size());
     const double epsilon = 1e-6;
-    for (size_t i = 0; i < answerT.size(); ++i) {
-        ASSERT_EQUAL_HINT(anserFind[i].id, answerT[i].id, "Sort by relevance perform not correctly."s);
-    }
-    // Почему нужно проверять вычисление рейтинга и релевантности в отдельной функции, а не сделать это здесь???
-    // if sort its ok, then can be check the calculation relevance and rating
-    for (size_t i = 0; i < answerT.size(); ++i) {
-        ASSERT_HINT(abs(answerT[i].relevance - anserFind[i].relevance) < epsilon, "Relevance calculated not correctly."s);
-        ASSERT_EQUAL_HINT(answerT[i].rating, anserFind[i].rating, "Rating calculated not correctly."s);
+    for (size_t i = 0; i < answer_true.size(); ++i) {
+        ASSERT_EQUAL_HINT(anser_find[i].id, answer_true[i].id, "Sort by relevance perform not correctly."s);
     }
 }
+
+void TestComputingRelevance() {
+
+    SearchServer search_server;
+    // Сan be change documents_ and vector ratings - sort, computing relevance, rating will be performed.
+    const map<int, string> documents_ = {{0, {"белый кот и модный ошейник"s}}, {1, {"пушистый кот пушистый хвост"s}},
+                                    {2, {"ухоженный пёс выразительные глаза"s}}, {3, {"ухоженный скворец евгений"s}}};
+    search_server.AddDocument(0, documents_.at(0), DocumentStatus::ACTUAL, {8, -3});
+    search_server.AddDocument(1, documents_.at(1), DocumentStatus::ACTUAL, {7, 2, 7});
+    search_server.AddDocument(2, documents_.at(2), DocumentStatus::ACTUAL, {5, -12, 2, 1});
+    search_server.AddDocument(3, documents_.at(3), DocumentStatus::BANNED, {9});
+
+    // Relevance computing
+    map<string, map<int, double>> word_to_document_freqs_;
+
+    for(const auto& [id, document] : documents_) {
+        const vector<string> words = SplitIntoWords(document);
+        const double inv_word_count = 1.0 / words.size();
+        
+        for (const string& word : words) {
+            word_to_document_freqs_[word][id] += inv_word_count;
+        }
+    }
+
+    map<int, double> document_to_relevance;
+
+    // Change query
+    for (const string& word : SplitIntoWords("пушистый ухоженный кот"s)) {
+        if (word_to_document_freqs_.count(word) == 0) {
+            continue;
+        }
+        const double inverse_document_freq = log(search_server.GetDocumentCount() * 1.0 / word_to_document_freqs_.at(word).size());
+        for (const auto [document_id, term_freq] : word_to_document_freqs_.at(word)) {
+            document_to_relevance[document_id] += term_freq * inverse_document_freq;
+        }
+    }
+
+    // RATING VALUE(NULL) IS NOT USING !!!ALARM!!! THIS IS ЗАГЛУШКА!!!
+    vector<Document> answer_true = {{1, document_to_relevance.at(1), 0},
+                                    {2, document_to_relevance.at(2), 0},
+                                    {0, document_to_relevance.at(0), 0}};
+
+    const vector<Document> anser_find = search_server.FindTopDocuments("пушистый ухоженный кот"s);
+  
+    ASSERT_EQUAL(answer_true.size(), answer_true.size());
+    const double epsilon = 1e-6;
+    for (size_t i = 0; i < answer_true.size(); ++i) {
+        ASSERT_HINT(abs(answer_true[i].relevance - anser_find[i].relevance) < epsilon, "Relevance calculated not correctly."s);
+    }
+}
+
+void TestComputingRating() {
+
+    SearchServer search_server;
+    // Сan be change documents_ and vector ratings - sort, computing relevance, rating will be performed.
+    const map<int, string> documents_ = {{0, {"белый кот и модный ошейник"s}}, {1, {"пушистый кот пушистый хвост"s}},
+                                    {2, {"ухоженный пёс выразительные глаза"s}}};
+    search_server.AddDocument(0, documents_.at(0), DocumentStatus::ACTUAL, {8, -3});
+    search_server.AddDocument(1, documents_.at(1), DocumentStatus::ACTUAL, {7, 2, 7});
+    search_server.AddDocument(2, documents_.at(2), DocumentStatus::ACTUAL, {5, -12, 2, 1});
+
+    auto ComputeRating = [](const vector<int> ratings)
+    { return accumulate(ratings.begin(), ratings.end(), 0) / static_cast<int>(ratings.size()); };
+
+    // Change arg func ComputeRating
+    // RELEVANCE VALUE(NULL) IS NOT USING !!!ALARM!!! THIS IS ЗАГЛУШКА!!!
+    vector<Document> answer_true = {{1, 0, ComputeRating({7, 2, 7})},
+                                    {2, 0, ComputeRating({5, -12, 2, 1})},
+                                    {0, 0, ComputeRating({8, -3})}};
+
+    const vector<Document> anser_find = search_server.FindTopDocuments("пушистый ухоженный кот"s);
+    
+    ASSERT_EQUAL(answer_true.size(), answer_true.size());
+
+    for (size_t i = 0; i < answer_true.size(); ++i) {
+        ASSERT_EQUAL_HINT(answer_true[i].rating, anser_find[i].rating, "Rating calculated not correctly."s);
+    }
+}
+
 
 // Проверка поиска документов, имеющие заданный статус
 void TestFindDocumentStatus() {
@@ -184,14 +259,15 @@ void TestPredicateFunc() {
     ASSERT_HINT(id == 1, "Function-predicate using not correctly by document id condition."s);
 }
 
-
 // Функция TestSearchServer является точкой входа для запуска тестов
 void TestSearchServer() {
     RUN_TEST(TestExcludeStopWordsFromAddedDocumentContent);
     // Не забудьте вызывать остальные тесты здесь
     RUN_TEST(TestAddDocument);
     RUN_TEST(TestMinusStopWordsSupportAndMatch);
-    RUN_TEST(TestSortAndComputingRelevanceRatingDocuments);
+    RUN_TEST(TestSortDocuments);
+    RUN_TEST(TestComputingRelevance);
+    RUN_TEST(TestComputingRating);
     RUN_TEST(TestFindDocumentStatus);
     RUN_TEST(TestPredicateFunc);
 }
