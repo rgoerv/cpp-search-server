@@ -92,11 +92,11 @@ void TestSortDocuments(){
 
     const vector<Document> anser_find = search_server.FindTopDocuments("пушистый ухоженный кот"s);
 
-    double last_relevance = 0;
-    for (size_t i = 0; i < anser_find.size(); ++i) {
-        if(i != 0) {
-            ASSERT_HINT(last_relevance > anser_find[i].relevance, "Sort by relevance perform not correctly."s);
-        }
+    ASSERT(!anser_find.empty());
+    
+    double last_relevance = anser_find[0].relevance;
+    for (size_t i = 1; i < anser_find.size(); ++i) {
+        ASSERT_HINT(last_relevance > anser_find[i].relevance, "Sort by relevance perform not correctly."s);
         last_relevance = anser_find[i].relevance;
     }
 }
