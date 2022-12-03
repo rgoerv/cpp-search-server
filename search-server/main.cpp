@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <numeric>
 
 using namespace std;
 
@@ -81,11 +82,11 @@ public:
     template <typename StringContainer>
     explicit SearchServer(const StringContainer & stop_words)
         : stop_words_(MakeUniqueNonEmptyStrings(stop_words)) {
-            for (const string & word : stop_words_) {
-                if(!IsValidWord(word)) {
-                    throw invalid_argument("Cтоп слово содержит недопустимые символы!"s);
-                }
-            }            
+        if(!none_of(stop_words_.begin(), stop_words_.end(), [](string word) {
+            return !IsValidWord(word);
+        })) {
+            throw invalid_argument("Cтоп слово содержит недопустимые символы!"s);
+        }           
     }
 
     explicit SearchServer(const string & stop_words_text)
@@ -94,29 +95,26 @@ public:
 
     void AddDocument(int document_id, const string & document, DocumentStatus status,
                                     const vector<int> & ratings) {
-        try {
-            if(GetDocumentId(document_id) == document_id) {
-                throw invalid_argument("Документ с таким id уже существует!"s);
-            }
-        // Используйте исключения только для уведомления об исключительных ситуациях. 
-        // Не применяйте их, чтобы управлять выполнением программы. Да.
-        } catch(const out_of_range & error) {
-            if((document_id >= 0)) {
-                vector<string> words = SplitIntoWordsNoStop(document);            
-                const double inv_word_count = 1.0 / words.size();
+        // я не знаю как применять правильно реализованную функцию GetDocumentId(), поэтому сделал так
+        if(documents_.count(document_id) != 0) {
+            throw invalid_argument("Документ с таким id уже существует!"s);
+        }
+        if((document_id >= 0)) {
+            vector<string> words = SplitIntoWordsNoStop(document);            
+            const double inv_word_count = 1.0 / words.size();
 
-                for (const string & word : words) {
-                    if(!IsValidWord(word)) {
-                        throw invalid_argument("Слово документа содержит недопустимые символы!"s);
-                    }
+            for (const string & word : words) {
+                if(!IsValidWord(word)) {
+                    throw invalid_argument("Слово документа содержит недопустимые символы!"s);
                 }
-                for (const string & word : words) {
-                    word_to_document_freqs_[word][document_id] += inv_word_count;
-                }
-                documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
-            } else {
-                throw invalid_argument("Попытка добавить документ с отрицательным id!"s);
             }
+            for (const string & word : words) {
+                word_to_document_freqs_[word][document_id] += inv_word_count;
+            }
+            documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
+            document_ids.push_back(document_id);
+        } else {
+            throw invalid_argument("Попытка добавить документ с отрицательным id!"s);
         }
     }
 
@@ -128,12 +126,11 @@ public:
 
         sort(matched_documents.begin(), matched_documents.end(),
             [](const Document & lhs, const Document & rhs) {
-                const double epsilon = 1e-6;
-                if (abs(lhs.relevance - rhs.relevance) < epsilon) {
+                const double precision = 1e-6;
+                if (abs(lhs.relevance - rhs.relevance) < precision) {
                     return lhs.rating > rhs.rating;
-                } else {
-                    return lhs.relevance > rhs.relevance;
                 }
+                return lhs.relevance > rhs.relevance;
             });
         if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
             matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
@@ -154,11 +151,11 @@ public:
     }
 
     [[nodiscard]] int GetDocumentId(int index) const {
+        // return document_ids.at(index);
         if((index >= 0) && (index < GetDocumentCount())) {
-            return index;
-        } else {
-            throw out_of_range("Выход за пределы списка документов!"s);        
+            return document_ids[index];
         }
+        throw out_of_range("Выход за пределы списка документов!"s);        
     }
 
     int GetDocumentCount() const {
@@ -197,6 +194,7 @@ private:
     const set<string> stop_words_;
     map<string, map<int, double>> word_to_document_freqs_;
     map<int, DocumentData> documents_;
+    vector<int> document_ids;
 
     bool IsStopWord(const string & word) const {
         return stop_words_.count(word) > 0;
@@ -223,11 +221,7 @@ private:
         if (ratings.empty()) {
             return 0;
         }
-        int rating_sum = 0;
-        for (const int rating : ratings) {
-            rating_sum += rating;
-        }
-        return rating_sum / static_cast<int>(ratings.size());
+        return accumulate(ratings.begin(), ratings.end(), 0) / static_cast<int>(ratings.size());
     }
 
     struct QueryWord {
@@ -330,7 +324,7 @@ void PrintError(const T & error) {
 
 int main() {
 
-    SearchServer search_server("и в на"s);
+    SearchServer search_server("и в на про"s);
     search_server.AddDocument(1, "пушистый кот пушистый хвост"s, DocumentStatus::ACTUAL, {7, 2, 7});
     search_server.AddDocument(2, "пушистый кот пушистый хвост"s, DocumentStatus::ACTUAL, {7, 2, 7});
     cout << "SUCESS"s << endl;
