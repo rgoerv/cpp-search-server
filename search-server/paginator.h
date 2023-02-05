@@ -1,72 +1,73 @@
-// Здесь определены и (обьявлены) классы Paginator и IteratorRange, делящие вывод результатов поиска по страницам
+// Р—РґРµСЃСЊ РѕРїСЂРµРґРµР»РµРЅС‹ Рё (РѕР±СЊСЏРІР»РµРЅС‹) РєР»Р°СЃСЃС‹ Paginator Рё IteratorRange, РґРµР»СЏС‰РёРµ РІС‹РІРѕРґ СЂРµР·СѓР»СЊС‚Р°С‚РѕРІ РїРѕРёСЃРєР° РїРѕ СЃС‚СЂР°РЅРёС†Р°Рј
 #pragma once
 #include <algorithm>
 #include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
+#include <iterator>
 
-using std::vector;
-using std::pair;
 using std::ostream;
 
 template <class Iterator>
-ostream& operator<<(ostream& out, const pair<Iterator, Iterator>& ItRange) {
-    for (auto it = ItRange.first; it != ItRange.second; ++it) {
-        out << *it;
-    }
-    return out;
-}
-
-
-template <class Iterator, class Container>
 class IteratorRange {
 public:
-    IteratorRange(Iterator begin, Iterator end) {
-        Page.first = begin;
-        Page.second = end;
-    }
-    Iterator begin(const Container& container) const {
-        return container.begin();
+    IteratorRange(Iterator begin, Iterator end) 
+        : begin_(begin), end_(end), range_size_(distance(begin_, end_)) {
     }
 
-    Iterator end(const Container& container) const {
-        return container.end();
+    Iterator begin() const {
+        return begin_;
     }
 
-    size_t size(const Container& container) const {
-        return distance(begin(container), end(container));
+    Iterator end() const {
+        return end_;
     }
-    pair<Iterator, Iterator> Page;
+
+    size_t size() const {
+        return range_size_;
+    }
+
+private:
+    Iterator begin_, end_;
+    size_t range_size_;
 };
 
 template <class Iterator>
 class Paginator {
 public:
     Paginator(Iterator range_begin, Iterator range_end, size_t page_size) {
-        auto pages = range_begin;
-        while (pages != range_end) {
-            if (pages + page_size > range_end) {
-                Pages.push_back({ pages, range_end });
+        auto pages_begin = range_begin;
+        while (pages_begin != range_end) {
+            if (std::distance(pages_begin, range_end) < page_size) {
+                pages_.push_back({ pages_begin, range_end });
                 break;
             }
             else {
-                Pages.push_back({ pages, pages + page_size });
-                pages += page_size;
+                pages_.push_back({ pages_begin, pages_begin + page_size });
+                pages_begin += page_size;
             }
         }
     }
 
     auto begin() const {
-        return Pages.begin();
+        return pages_.begin();
     }
 
     auto end() const {
-        return Pages.end();
+        return pages_.end();
     }
 
-    vector<pair<Iterator, Iterator>> Pages;
+    std::vector<IteratorRange<Iterator>> pages_;
 };
+
+template <class Iterator>
+ostream& operator<<(ostream& out, const IteratorRange<Iterator>& ItRange) {
+    for (Iterator it = ItRange.begin(); it != ItRange.end(); ++it) {
+        out << *it;
+    }
+    return out;
+}
 
 template <typename Container>
 auto Paginate(const Container& c, size_t page_size) {
