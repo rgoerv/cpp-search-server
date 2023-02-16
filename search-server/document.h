@@ -1,6 +1,6 @@
-// Обьявление структуры Document, DocumentStatus
 #pragma once
 #include <string>
+
 using std::ostream;
 
 struct Document {

@@ -1,6 +1,6 @@
-// Определение оператора вывода структуры документ
 #include <string>
 #include <iostream>
+
 #include "document.h"
 
 using std::ostream;

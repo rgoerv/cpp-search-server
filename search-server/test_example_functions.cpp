@@ -8,7 +8,7 @@
 #include "request_queue.h"
 #include "search_server.h"
 #include "string_processing.h"
-#include "TestSearchServer.h"
+#include "test_example_functions.h"
 
 using std::cerr;
 using std::string;
@@ -16,8 +16,7 @@ using std::vector;
 using std::endl;
 using std::ostream;
 
-
-#define RUN_TEST(func) RunTestImpl((func), (#func)) // напишите недостающий код
+#define RUN_TEST(func) RunTestImpl((func), (#func)) // РЅР°РїРёС€РёС‚Рµ РЅРµРґРѕСЃС‚Р°СЋС‰РёР№ РєРѕРґ
 
 #define ASSERT_EQUAL(a, b) AssertEqualImpl((a), (b), #a, #b, __FILE__, __FUNCTION__, __LINE__, ""s)
 
@@ -40,9 +39,9 @@ void AssertImpl(bool value, const string& expr_str, const string& file, const st
 
 #define ASSERT_HINT(expr, hint) AssertImpl(!!(expr), #expr, __FILE__, __FUNCTION__, __LINE__, (hint))
 
-// -------- Начало модульных тестов поисковой системы ----------
+// -------- РќР°С‡Р°Р»Рѕ РјРѕРґСѓР»СЊРЅС‹С… С‚РµСЃС‚РѕРІ РїРѕРёСЃРєРѕРІРѕР№ СЃРёСЃС‚РµРјС‹ ----------
 
-// Тест проверяет, что поисковая система исключает стоп-слова при добавлении документов
+// РўРµСЃС‚ РїСЂРѕРІРµСЂСЏРµС‚, С‡С‚Рѕ РїРѕРёСЃРєРѕРІР°СЏ СЃРёСЃС‚РµРјР° РёСЃРєР»СЋС‡Р°РµС‚ СЃС‚РѕРї-СЃР»РѕРІР° РїСЂРё РґРѕР±Р°РІР»РµРЅРёРё РґРѕРєСѓРјРµРЅС‚РѕРІ
 void TestExcludeStopWordsFromAddedDocumentContent() {
     const int doc_id = 42;
     const string content = "cat in the city"s;
@@ -64,7 +63,7 @@ void TestExcludeStopWordsFromAddedDocumentContent() {
     }
 }
 
-// Добавление документов
+// Р”РѕР±Р°РІР»РµРЅРёРµ РґРѕРєСѓРјРµРЅС‚РѕРІ
 void TestAddDocument() {
     const int doc_id = 42;
     const string content = "black cat with collar in the city "s;
@@ -84,7 +83,7 @@ void TestAddDocument() {
     ASSERT_EQUAL(find_document[0].relevance, 0);
 }
 
-//Поддержка минус слов, стоп слов и матчинг
+//РџРѕРґРґРµСЂР¶РєР° РјРёРЅСѓСЃ СЃР»РѕРІ, СЃС‚РѕРї СЃР»РѕРІ Рё РјР°С‚С‡РёРЅРі
 void TestMinusStopWordsSupportAndMatch() {
     const int doc_id = 42;
     const string content = "black cat with collar in the city"s;
@@ -115,13 +114,13 @@ void TestMinusStopWordsSupportAndMatch() {
     }
 }
 
-//Сортировка документов по релевантности и вычисление релевантности и рейтинга
+//РЎРѕСЂС‚РёСЂРѕРІРєР° РґРѕРєСѓРјРµРЅС‚РѕРІ РїРѕ СЂРµР»РµРІР°РЅС‚РЅРѕСЃС‚Рё Рё РІС‹С‡РёСЃР»РµРЅРёРµ СЂРµР»РµРІР°РЅС‚РЅРѕСЃС‚Рё Рё СЂРµР№С‚РёРЅРіР°
 void TestSortAndComputingRelevanceRatingDocuments() {
 
     SearchServer search_server(""s);
-    // Сan be change documents_ and vector ratings - sort, computing relevance, rating will be performed.
-    const map<int, string> documents_ = { {0, {"белый кот и модный ошейник"s}}, {1, {"пушистый кот пушистый хвост"s}},
-                                    {2, {"ухоженный пёс выразительные глаза"s}}, {3, {"ухоженный скворец евгений"s}} };
+    // РЎan be change documents_ and vector ratings - sort, computing relevance, rating will be performed.
+    const map<int, string> documents_ = { {0, {"Р±РµР»С‹Р№ РєРѕС‚ Рё РјРѕРґРЅС‹Р№ РѕС€РµР№РЅРёРє"s}}, {1, {"РїСѓС€РёСЃС‚С‹Р№ РєРѕС‚ РїСѓС€РёСЃС‚С‹Р№ С…РІРѕСЃС‚"s}},
+                                    {2, {"СѓС…РѕР¶РµРЅРЅС‹Р№ РїС‘СЃ РІС‹СЂР°Р·РёС‚РµР»СЊРЅС‹Рµ РіР»Р°Р·Р°"s}}, {3, {"СѓС…РѕР¶РµРЅРЅС‹Р№ СЃРєРІРѕСЂРµС† РµРІРіРµРЅРёР№"s}} };
     search_server.AddDocument(0, documents_.at(0), DocumentStatus::ACTUAL, { 8, -3 });
     search_server.AddDocument(1, documents_.at(1), DocumentStatus::ACTUAL, { 7, 2, 7 });
     search_server.AddDocument(2, documents_.at(2), DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
@@ -141,7 +140,7 @@ void TestSortAndComputingRelevanceRatingDocuments() {
 
     map<int, double> document_to_relevance;
 
-    for (const string& word : SplitIntoWords("пушистый ухоженный кот"s)) {
+    for (const string& word : SplitIntoWords("РїСѓС€РёСЃС‚С‹Р№ СѓС…РѕР¶РµРЅРЅС‹Р№ РєРѕС‚"s)) {
         if (word_to_document_freqs_.count(word) == 0) {
             continue;
         }
@@ -170,7 +169,7 @@ void TestSortAndComputingRelevanceRatingDocuments() {
     }
         });
 
-    const vector<Document> anserFind = search_server.FindTopDocuments("пушистый ухоженный кот"s);
+    const vector<Document> anserFind = search_server.FindTopDocuments("РїСѓС€РёСЃС‚С‹Р№ СѓС…РѕР¶РµРЅРЅС‹Р№ РєРѕС‚"s);
 
     ASSERT_EQUAL(answerT.size(), answerT.size());
     const double epsilon = 1e-6;
@@ -178,7 +177,7 @@ void TestSortAndComputingRelevanceRatingDocuments() {
         ASSERT_EQUAL_HINT(anserFind[i].id, answerT[i].id, "Sort by relevance perform not correctly."s);
     }
 
-    // Почему нужно проверять вычисление рейтинга и релевантности в отдельной функции, а не сделать это здесь???
+    // РџРѕС‡РµРјСѓ РЅСѓР¶РЅРѕ РїСЂРѕРІРµСЂСЏС‚СЊ РІС‹С‡РёСЃР»РµРЅРёРµ СЂРµР№С‚РёРЅРіР° Рё СЂРµР»РµРІР°РЅС‚РЅРѕСЃС‚Рё РІ РѕС‚РґРµР»СЊРЅРѕР№ С„СѓРЅРєС†РёРё, Р° РЅРµ СЃРґРµР»Р°С‚СЊ СЌС‚Рѕ Р·РґРµСЃСЊ???
     // if sort its ok, then can be check the calculation relevance and rating
     for (size_t i = 0; i < answerT.size(); ++i) {
         ASSERT_HINT(std::abs(answerT[i].relevance - anserFind[i].relevance) < epsilon, "Relevance calculated not correctly."s);
@@ -186,53 +185,53 @@ void TestSortAndComputingRelevanceRatingDocuments() {
     }
 }
 
-// Проверка поиска документов, имеющие заданный статус
+// РџСЂРѕРІРµСЂРєР° РїРѕРёСЃРєР° РґРѕРєСѓРјРµРЅС‚РѕРІ, РёРјРµСЋС‰РёРµ Р·Р°РґР°РЅРЅС‹Р№ СЃС‚Р°С‚СѓСЃ
 void TestFindDocumentStatus() {
-    SearchServer search_server("и в на"s);
-    search_server.AddDocument(0, "белый кот и модный ошейник"s, DocumentStatus::REMOVED, { 8, -3 });
-    search_server.AddDocument(1, "пушистый кот пушистый хвост"s, DocumentStatus::IRRELEVANT, { 7, 2, 7 });
-    search_server.AddDocument(2, "ухоженный пёс выразительные глаза"s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
+    SearchServer search_server("Рё РІ РЅР°"s);
+    search_server.AddDocument(0, "Р±РµР»С‹Р№ РєРѕС‚ Рё РјРѕРґРЅС‹Р№ РѕС€РµР№РЅРёРє"s, DocumentStatus::REMOVED, { 8, -3 });
+    search_server.AddDocument(1, "РїСѓС€РёСЃС‚С‹Р№ РєРѕС‚ РїСѓС€РёСЃС‚С‹Р№ С…РІРѕСЃС‚"s, DocumentStatus::IRRELEVANT, { 7, 2, 7 });
+    search_server.AddDocument(2, "СѓС…РѕР¶РµРЅРЅС‹Р№ РїС‘СЃ РІС‹СЂР°Р·РёС‚РµР»СЊРЅС‹Рµ РіР»Р°Р·Р°"s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
 
-    int id = search_server.FindTopDocuments("ухоженный кот"s, DocumentStatus::REMOVED).front().id;
+    int id = search_server.FindTopDocuments("СѓС…РѕР¶РµРЅРЅС‹Р№ РєРѕС‚"s, DocumentStatus::REMOVED).front().id;
     ASSERT_HINT(id == 0, "Find documents by statuss perform wrong."s);
 
-    id = search_server.FindTopDocuments("ухоженный кот"s, DocumentStatus::IRRELEVANT).front().id;
+    id = search_server.FindTopDocuments("СѓС…РѕР¶РµРЅРЅС‹Р№ РєРѕС‚"s, DocumentStatus::IRRELEVANT).front().id;
     ASSERT_HINT(id == 1, "Find documents by statuss perform wrong."s);
 
-    id = search_server.FindTopDocuments("ухоженный кот"s, DocumentStatus::ACTUAL).front().id;
+    id = search_server.FindTopDocuments("СѓС…РѕР¶РµРЅРЅС‹Р№ РєРѕС‚"s, DocumentStatus::ACTUAL).front().id;
     ASSERT_HINT(id == 2, "Find documents by statuss perform wrong."s);
 
-    ASSERT_HINT(search_server.FindTopDocuments("ухоженный кот"s, DocumentStatus::BANNED).empty(),
+    ASSERT_HINT(search_server.FindTopDocuments("СѓС…РѕР¶РµРЅРЅС‹Р№ РєРѕС‚"s, DocumentStatus::BANNED).empty(),
         "Find documents by statuss perform wrong."s);
 }
 
-// Тест использования предиката, задаваемого пользователем
+// РўРµСЃС‚ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ РїСЂРµРґРёРєР°С‚Р°, Р·Р°РґР°РІР°РµРјРѕРіРѕ РїРѕР»СЊР·РѕРІР°С‚РµР»РµРј
 void TestPredicateFunc() {
-    SearchServer search_server("и в на"s);
-    search_server.AddDocument(0, "белый кот и модный ошейник"s, DocumentStatus::REMOVED, { 8, -3 });
-    search_server.AddDocument(1, "пушистый кот пушистый хвост"s, DocumentStatus::IRRELEVANT, { 7, 2, 7 });
-    search_server.AddDocument(2, "ухоженный пёс выразительные глаза"s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
-    search_server.AddDocument(3, "ухоженный скворец евгений"s, DocumentStatus::BANNED, { 9 });
+    SearchServer search_server("Рё РІ РЅР°"s);
+    search_server.AddDocument(0, "Р±РµР»С‹Р№ РєРѕС‚ Рё РјРѕРґРЅС‹Р№ РѕС€РµР№РЅРёРє"s, DocumentStatus::REMOVED, { 8, -3 });
+    search_server.AddDocument(1, "РїСѓС€РёСЃС‚С‹Р№ РєРѕС‚ РїСѓС€РёСЃС‚С‹Р№ С…РІРѕСЃС‚"s, DocumentStatus::IRRELEVANT, { 7, 2, 7 });
+    search_server.AddDocument(2, "СѓС…РѕР¶РµРЅРЅС‹Р№ РїС‘СЃ РІС‹СЂР°Р·РёС‚РµР»СЊРЅС‹Рµ РіР»Р°Р·Р°"s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
+    search_server.AddDocument(3, "СѓС…РѕР¶РµРЅРЅС‹Р№ СЃРєРІРѕСЂРµС† РµРІРіРµРЅРёР№"s, DocumentStatus::BANNED, { 9 });
 
-    int id = search_server.FindTopDocuments("ухоженный кот"s,
+    int id = search_server.FindTopDocuments("СѓС…РѕР¶РµРЅРЅС‹Р№ РєРѕС‚"s,
         [](int document_id, DocumentStatus status, int rating) { return rating > 8; }).front().id;
     ASSERT_HINT(id == 3, "Function-predicate using not correctly by rating condition."s);
 
-    id = search_server.FindTopDocuments("ухоженный кот"s,
+    id = search_server.FindTopDocuments("СѓС…РѕР¶РµРЅРЅС‹Р№ РєРѕС‚"s,
         [](int document_id, DocumentStatus status, int rating) { return document_id == 1; }).front().id;
     ASSERT_HINT(id == 1, "Function-predicate using not correctly by document id condition."s);
 }
 
 
-// Функция TestSearchServer является точкой входа для запуска тестов
+// Р¤СѓРЅРєС†РёСЏ TestSearchServer СЏРІР»СЏРµС‚СЃСЏ С‚РѕС‡РєРѕР№ РІС…РѕРґР° РґР»СЏ Р·Р°РїСѓСЃРєР° С‚РµСЃС‚РѕРІ
 void TestSearchServer() {
     RUN_TEST(TestExcludeStopWordsFromAddedDocumentContent);
-    // Не забудьте вызывать остальные тесты здесь
+    // РќРµ Р·Р°Р±СѓРґСЊС‚Рµ РІС‹Р·С‹РІР°С‚СЊ РѕСЃС‚Р°Р»СЊРЅС‹Рµ С‚РµСЃС‚С‹ Р·РґРµСЃСЊ
     RUN_TEST(TestAddDocument);
     RUN_TEST(TestMinusStopWordsSupportAndMatch);
     RUN_TEST(TestSortAndComputingRelevanceRatingDocuments);
     RUN_TEST(TestFindDocumentStatus);
     RUN_TEST(TestPredicateFunc);
 }
-// --------- Окончание модульных тестов поисковой системы -----------
+// --------- РћРєРѕРЅС‡Р°РЅРёРµ РјРѕРґСѓР»СЊРЅС‹С… С‚РµСЃС‚РѕРІ РїРѕРёСЃРєРѕРІРѕР№ СЃРёСЃС‚РµРјС‹ -----------
 

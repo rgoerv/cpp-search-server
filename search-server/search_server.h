@@ -1,4 +1,3 @@
-// Ядро поисковой системы, обьявление класса SearchServer
 #pragma once
 #include <algorithm>
 #include <map>
@@ -47,7 +46,16 @@ public:
     vector<Document> FindTopDocuments(const string& raw_query, DocumentStatus status) const;
     vector<Document> FindTopDocuments(const string& raw_query) const;
     int GetDocumentCount() const;
-    int GetDocumentId(int index) const;
+
+    // Методы begin() и end() дают возвращают итераторы к контейнеру id документов поисковой системы
+    vector<int>::const_iterator begin() const;
+    vector<int>::const_iterator end() const;
+
+    // Получение частот слов по id документа
+    const map<string, double>& GetWordFrequencies(int document_id) const;
+
+    // Удаление документа из поискового сервера
+    void RemoveDocument(int document_id);
 
     std::tuple<vector<string>, DocumentStatus> MatchDocument(const string& raw_query,
         int document_id) const;
@@ -61,6 +69,8 @@ private:
     map<string, map<int, double>> word_to_document_freqs_;
     map<int, DocumentData> documents_;
     vector<int> document_ids_;
+    map<int, map<string, double>> id_to_words_freqs_;
+    map<string, double> empty;
 
     bool IsStopWord(const string& word) const;
 
@@ -105,6 +115,9 @@ private:
     vector<Document> FindAllDocuments(const Query& query,
         DocumentPredicate document_predicate) const;
 };
+
+void AddDocument(SearchServer& search_server, int document_id, const string& document, DocumentStatus status,
+    const vector<int>& ratings);
 
 template <typename DocumentPredicate>
 vector<Document> SearchServer::FindTopDocuments(const string& raw_query,

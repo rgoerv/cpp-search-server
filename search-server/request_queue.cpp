@@ -1,4 +1,3 @@
-// Определение функций класса RequestQueue
 #include <algorithm>
 #include <string>
 #include <utility>

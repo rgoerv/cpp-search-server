@@ -1,4 +1,3 @@
-// ����������� ������� ������ SearchServer
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -22,6 +21,11 @@ using std::set;
 using namespace std::string_literals;
 using std::invalid_argument;
 
+void AddDocument(SearchServer& search_server, int document_id, const string& document, DocumentStatus status,
+    const vector<int>& ratings) {
+    search_server.AddDocument(document_id, document, status, ratings);
+}
+
 void SearchServer::AddDocument(int document_id, const string& document, DocumentStatus status,
     const vector<int>& ratings) {
     if ((document_id < 0) || (documents_.count(document_id) > 0)) {
@@ -32,6 +36,7 @@ void SearchServer::AddDocument(int document_id, const string& document, Document
     const double inv_word_count = 1.0 / words.size();
     for (const string& word : words) {
         word_to_document_freqs_[word][document_id] += inv_word_count;
+        id_to_words_freqs_[document_id][word] = 0;
     }
     documents_.emplace(document_id, DocumentData{ ComputeAverageRating(ratings), status });
     document_ids_.push_back(document_id);
@@ -52,9 +57,51 @@ int SearchServer::GetDocumentCount() const {
     return static_cast<int>(documents_.size());
 }
 
-int SearchServer::GetDocumentId(int index) const {
-    return document_ids_.at(index);
+vector<int>::const_iterator SearchServer::begin() const {
+    return document_ids_.begin();
 }
+
+vector<int>::const_iterator SearchServer::end() const {
+    return document_ids_.end();
+}
+
+const map<string, double> & SearchServer::GetWordFrequencies(int document_id) const {
+    map<string, double> word_freqs_ = {};
+    if (id_to_words_freqs_.count(document_id)) {
+        return id_to_words_freqs_.at(document_id); 
+    }
+    return empty;
+}
+
+void SearchServer::RemoveDocument(int document_id) {
+
+    // словарь id -> cловарь слов и ее частоты
+    id_to_words_freqs_.erase(document_id);
+
+    // очистка словаря слово -> id и его частота 
+    vector<string> word_to_erase_ids = {};
+    
+    for (auto& [word, id_freqs] : word_to_document_freqs_) {
+        
+        id_freqs.erase(document_id);
+
+        if (id_freqs.empty()) {
+            word_to_erase_ids.push_back(word);
+        }
+    }
+    
+    for (const auto& word : word_to_erase_ids) {
+        word_to_document_freqs_.erase(word);
+    }
+
+    // очистка словаря id -> rating и status документа
+    if (documents_.count(document_id)) {
+        documents_.erase(document_id);
+    }
+    // удаление id из вектора документов
+    document_ids_.erase(remove(document_ids_.begin(), document_ids_.end(), document_id));
+}
+
 
 std::tuple<vector<string>, DocumentStatus> SearchServer::MatchDocument(const string& raw_query,
     int document_id) const {

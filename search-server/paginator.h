@@ -1,4 +1,3 @@
-// Здесь определены и (обьявлены) классы Paginator и IteratorRange, делящие вывод результатов поиска по страницам
 #pragma once
 #include <algorithm>
 #include <iostream>
@@ -39,7 +38,7 @@ public:
     Paginator(Iterator range_begin, Iterator range_end, size_t page_size) {
         auto pages_begin = range_begin;
         while (pages_begin != range_end) {
-            if (std::distance(pages_begin, range_end) < page_size) {
+            if (static_cast<size_t>(std::distance(pages_begin, range_end)) < page_size) {
                 pages_.push_back({ pages_begin, range_end });
                 break;
             }
