@@ -48,8 +48,8 @@ public:
     int GetDocumentCount() const;
 
     // Методы begin() и end() дают возвращают итераторы к контейнеру id документов поисковой системы
-    vector<int>::const_iterator begin() const;
-    vector<int>::const_iterator end() const;
+    set<int>::const_iterator begin() const;
+    set<int>::const_iterator end() const;
 
     // Получение частот слов по id документа
     const map<string, double>& GetWordFrequencies(int document_id) const;
@@ -68,9 +68,8 @@ private:
     const set<string> stop_words_;
     map<string, map<int, double>> word_to_document_freqs_;
     map<int, DocumentData> documents_;
-    vector<int> document_ids_;
+    set<int> document_ids_;
     map<int, map<string, double>> id_to_words_freqs_;
-    map<string, double> empty;
 
     bool IsStopWord(const string& word) const;
 
@@ -78,7 +77,7 @@ private:
         // A valid word must not contain special characters
         return none_of(word.begin(), word.end(), [](char c) {
             return c >= '\0' && c < ' ';
-            });
+        });
     }
 
     vector<string> SplitIntoWordsNoStop(const string& text) const;
@@ -151,7 +150,7 @@ vector<Document> SearchServer::FindAllDocuments(const Query& query,
             continue;
         }
         const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
-        for (const auto [document_id, term_freq] : word_to_document_freqs_.at(word)) {
+        for (const auto& [document_id, term_freq] : word_to_document_freqs_.at(word)) {
             const auto& document_data = documents_.at(document_id);
             if (document_predicate(document_id, document_data.status, document_data.rating)) {
                 document_to_relevance[document_id] += term_freq * inverse_document_freq;
@@ -163,13 +162,13 @@ vector<Document> SearchServer::FindAllDocuments(const Query& query,
         if (word_to_document_freqs_.count(word) == 0) {
             continue;
         }
-        for (const auto [document_id, _] : word_to_document_freqs_.at(word)) {
+        for (const auto& [document_id, _] : word_to_document_freqs_.at(word)) {
             document_to_relevance.erase(document_id);
         }
     }
 
     vector<Document> matched_documents;
-    for (const auto [document_id, relevance] : document_to_relevance) {
+    for (const auto& [document_id, relevance] : document_to_relevance) {
         matched_documents.push_back(
             { document_id, relevance, documents_.at(document_id).rating });
     }

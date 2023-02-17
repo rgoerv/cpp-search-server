@@ -39,7 +39,7 @@ void SearchServer::AddDocument(int document_id, const string& document, Document
         id_to_words_freqs_[document_id][word] = 0;
     }
     documents_.emplace(document_id, DocumentData{ ComputeAverageRating(ratings), status });
-    document_ids_.push_back(document_id);
+    document_ids_.insert(document_id);
 }
 
 vector<Document> SearchServer::FindTopDocuments(const string& raw_query, DocumentStatus status) const {
@@ -57,16 +57,16 @@ int SearchServer::GetDocumentCount() const {
     return static_cast<int>(documents_.size());
 }
 
-vector<int>::const_iterator SearchServer::begin() const {
+set<int>::const_iterator SearchServer::begin() const {
     return document_ids_.begin();
 }
 
-vector<int>::const_iterator SearchServer::end() const {
+set<int>::const_iterator SearchServer::end() const {
     return document_ids_.end();
 }
 
 const map<string, double> & SearchServer::GetWordFrequencies(int document_id) const {
-    map<string, double> word_freqs_ = {};
+    const static map<string, double> empty;
     if (id_to_words_freqs_.count(document_id)) {
         return id_to_words_freqs_.at(document_id); 
     }
@@ -75,31 +75,31 @@ const map<string, double> & SearchServer::GetWordFrequencies(int document_id) co
 
 void SearchServer::RemoveDocument(int document_id) {
 
-    // словарь id -> cловарь слов и ее частоты
-    id_to_words_freqs_.erase(document_id);
-
     // очистка словаря слово -> id и его частота 
     vector<string> word_to_erase_ids = {};
     
-    for (auto& [word, id_freqs] : word_to_document_freqs_) {
-        
-        id_freqs.erase(document_id);
+    for (auto & [word, freq] : id_to_words_freqs_[document_id]) {
 
-        if (id_freqs.empty()) {
+        word_to_document_freqs_[word].erase(document_id);
+
+        if (word_to_document_freqs_[word].empty()) {
             word_to_erase_ids.push_back(word);
         }
     }
     
-    for (const auto& word : word_to_erase_ids) {
+    for (const auto & word : word_to_erase_ids) {
         word_to_document_freqs_.erase(word);
     }
+
+    // словарь id -> cловарь слов и ее частоты
+    id_to_words_freqs_.erase(document_id);
 
     // очистка словаря id -> rating и status документа
     if (documents_.count(document_id)) {
         documents_.erase(document_id);
     }
     // удаление id из вектора документов
-    document_ids_.erase(remove(document_ids_.begin(), document_ids_.end(), document_id));
+    document_ids_.erase(document_ids_.find(document_id));
 }
 
 
