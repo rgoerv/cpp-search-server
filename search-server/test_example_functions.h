@@ -14,6 +14,7 @@
 
 using std::cerr;
 using std::string;
+using std::string_view;
 using std::vector;
 using std::endl;
 using std::ostream;
@@ -65,19 +66,17 @@ ostream& operator<<(ostream& out, const map<T1, T2>& container) {
     return out;
 }
 
-
 template <typename _T>
-void RunTestImpl(_T T, const string& T_str) {
-    /* Напишите недостающий код */
+void RunTestImpl(_T T, string_view T_str) {
     T();
     cerr << T_str << " OK" << endl;
 }
 
-#define RUN_TEST(func) RunTestImpl((func), (#func)) // напишите недостающий код
+#define RUN_TEST(func) RunTestImpl((func), (#func))
 
 template <typename T, typename U>
-void AssertEqualImpl(const T& t, const U& u, const string& t_str, const string& u_str, const string& file,
-    const string& func, unsigned line, const string& hint) {
+void AssertEqualImpl(const T& t, const U& u, string_view t_str, string_view u_str, string_view file,
+    string_view func, unsigned line, string_view hint) {
     if (t != u) {
         cerr << std::boolalpha;
         cerr << file << "("s << line << "): "s << func << ": "s;
@@ -95,8 +94,8 @@ void AssertEqualImpl(const T& t, const U& u, const string& t_str, const string& 
 
 #define ASSERT_EQUAL_HINT(a, b, hint) AssertEqualImpl((a), (b), #a, #b, __FILE__, __FUNCTION__, __LINE__, (hint))
 
-void AssertImpl(bool value, const string& expr_str, const string& file, const string& func, unsigned line,
-    const string& hint);
+void AssertImpl(bool value, string_view expr_str, string_view file, string_view func, unsigned line,
+    string_view hint);
 
 #define ASSERT(expr) AssertImpl(!!(expr), #expr, __FILE__, __FUNCTION__, __LINE__, ""s)
 
@@ -119,4 +118,22 @@ void TestPredicateFunc();
 // Функция TestSearchServer является точкой входа для запуска тестов
 void TestSearchServer();
 // --------- Окончание модульных тестов поисковой системы -----------
-
+// --------------------------- Benchmarks ---------------------------
+//void BenchmarkMatchDocuments();
+//void BenchmarkRemoveDocument();
+//void BenchmarkSearchServer();
+//
+//template <typename ExecutionPolicy>
+//void BenchmarkMatchDocumentsTimeCount(string_view mark, SearchServer search_server, const string& query,
+//    ExecutionPolicy&& policy) {
+//    using namespace std;
+//    LOG_DURATION(mark);
+//    const int document_count = search_server.GetDocumentCount();
+//    int word_count = 0;
+//    for (int id = 0; id < document_count; ++id) {
+//        const auto [words, status] = search_server.MatchDocument(policy, query, id);
+//        word_count += (int)words.size();
+//    }
+//    cout << word_count << endl;
+//}
+// ------------------------- End Benchmarks -------------------------

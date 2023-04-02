@@ -1,11 +1,11 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <string_view>
 #include <map>
 
 #include "remove_duplicates.h"
 #include "search_server.h"
-
 
 /* Можно итерироваться по поисковому серверу с помощью написаных итераторов begin и end
    Методом .GetWordFrequencies(document_id) получать map с словами документа и ее частоту
@@ -19,7 +19,7 @@
    {
 	   using namespace std;
 
-	   set<map<string, double>> words_words_freqs = {};
+	   set<map<string_view, double>> words_words_freqs = {};
 	   vector<int> ids_to_delete_;
 
 	   for (const int & id : search_server) {	   

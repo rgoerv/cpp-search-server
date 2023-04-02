@@ -1,26 +1,19 @@
-// Определения функций обработки строк вне класса SearchServer
 #include <vector>
-#include <string>
+#include <string_view>
 
-using std::vector;
-using std::string;
+using std::string_view;
 
-vector<string> SplitIntoWords(const string& text) {
-    vector<string> words;
-    string word;
-    for (const char c : text) {
-        if (c == ' ') {
-            if (!word.empty()) {
-                words.push_back(word);
-                word.clear();
-            }
-        }
-        else {
-            word += c;
-        }
+std::vector<string_view> SplitIntoWords(string_view str) {
+    std::vector<string_view> result;
+
+    size_t space = str.find_first_not_of(' ');
+    size_t after_space = str.find_first_of(' ', space);
+
+    while (space != str.npos) {
+        result.push_back(str.substr(space, after_space - space));
+        str.remove_prefix(std::min(str.size(), after_space));
+        space = str.find_first_not_of(' ');
+        after_space = str.find_first_of(' ', space);
     }
-    if (!word.empty()) {
-        words.push_back(word);
-    }
-    return words;
+    return result;
 }
