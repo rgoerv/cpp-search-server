@@ -1,10 +1,8 @@
 #include <vector>
 #include <string_view>
 
-using std::string_view;
-
-std::vector<string_view> SplitIntoWords(string_view str) {
-    std::vector<string_view> result;
+std::vector<std::string_view> SplitIntoWords(std::string_view str) {
+    std::vector<std::string_view> result;
 
     size_t space = str.find_first_not_of(' ');
     size_t after_space = str.find_first_of(' ', space);

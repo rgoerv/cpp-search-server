@@ -3,9 +3,7 @@
 
 #include "document.h"
 
-using std::ostream;
-
-ostream& operator<<(ostream& out, const Document& document) {
+std::ostream& operator<<(std::ostream& out, const Document& document) {
     using namespace std;
     out << "{ "s
         << "document_id = "s << document.id << ", "s

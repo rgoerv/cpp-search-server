@@ -6,13 +6,11 @@
 #include <vector>
 #include <iterator>
 
-using std::ostream;
-
 template <class Iterator>
 class IteratorRange {
 public:
     IteratorRange(Iterator begin, Iterator end) 
-        : begin_(begin), end_(end), range_size_(distance(begin_, end_)) {
+        : begin_(begin), end_(end), range_size_(std::distance(begin_, end_)) {
     }
 
     Iterator begin() const {
@@ -61,7 +59,7 @@ public:
 };
 
 template <class Iterator>
-ostream& operator<<(ostream& out, const IteratorRange<Iterator>& ItRange) {
+std::ostream& operator<<(std::ostream& out, const IteratorRange<Iterator>& ItRange) {
     for (Iterator it = ItRange.begin(); it != ItRange.end(); ++it) {
         out << *it;
     }

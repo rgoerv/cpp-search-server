@@ -1,8 +1,6 @@
 #pragma once
 #include <string>
 
-using std::ostream;
-
 struct Document {
     Document() = default;
 
@@ -24,4 +22,4 @@ enum class DocumentStatus {
     REMOVED,
 };
 
-ostream& operator<<(ostream& out, const Document& document);
+std::ostream& operator<<(std::ostream& out, const Document& document);
